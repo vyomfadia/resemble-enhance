@@ -95,19 +95,7 @@ class Enhancer(nn.Module):
             df = pd.DataFrame(rows)
             return df.to_markdown(index=False)
         except ImportError:
-            logger.warning("pandas not found, falling back to plain text")
-
-            headers = ["name", "trainable", "total"]
-            col_widths = {h: len(h) for h in headers}
-            col_widths = {key: max(col_widths[key], max(len(str(row[key])) for row in rows)) for key in headers}
-            header_line = "| " + " | ".join(h.ljust(col_widths[h]) for h in headers) + " |"
-            separator_line = "| " + " | ".join("-" * col_widths[h] for h in headers) + " |"
-            lines = [header_line, separator_line]
-            for row in rows:
-                data_line = "| " + " | ".join(str(row[h]).ljust(col_widths[h]) for h in headers) + " |"
-                lines.append(data_line)
-
-            return "\n".join(lines)
+            return "install in training mode (pip install resemble-enhance[train]) to see summaries"
 
     def to_mel(self, x: Tensor, drop_last=True):
         """
