@@ -83,12 +83,6 @@ class Enhancer(nn.Module):
         logger.info(f"Loaded pretrained model from {path}")
 
     def summarize(self):
-        # lazy imports for training-only dependencies
-        try:
-            import pandas as pd
-        except ImportError as e:
-            raise ImportError("you are in training mode - make sure you installed dependencies as resemble-enhance[train]") from e
-
         npa_train = lambda m: sum(p.numel() for p in m.parameters() if p.requires_grad)
         npa = lambda m: sum(p.numel() for p in m.parameters())
         rows = []
@@ -96,8 +90,24 @@ class Enhancer(nn.Module):
             rows.append(dict(name=name, trainable=npa_train(module), total=npa(module)))
         rows.append(dict(name="total", trainable=npa_train(self), total=npa(self)))
 
-        df = pd.DataFrame(rows)
-        return df.to_markdown(index=False)
+        try:
+            import pandas as pd
+            df = pd.DataFrame(rows)
+            return df.to_markdown(index=False)
+        except ImportError:
+            logger.warning("pandas not found, falling back to plain text")
+
+            headers = ["name", "trainable", "total"]
+            col_widths = {h: len(h) for h in headers}
+            col_widths = {key: max(col_widths[key], max(len(str(row[key])) for row in rows)) for key in headers}
+            header_line = "| " + " | ".join(h.ljust(col_widths[h]) for h in headers) + " |"
+            separator_line = "| " + " | ".join("-" * col_widths[h] for h in headers) + " |"
+            lines = [header_line, separator_line]
+            for row in rows:
+                data_line = "| " + " | ".join(str(row[h]).ljust(col_widths[h]) for h in headers) + " |"
+                lines.append(data_line)
+
+            return "\n".join(lines)
 
     def to_mel(self, x: Tensor, drop_last=True):
         """

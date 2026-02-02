@@ -4,7 +4,6 @@ from functools import cache, partial
 from typing import Callable, TypeVar
 
 import deepspeed
-import pandas as pd
 from deepspeed.accelerator import get_accelerator
 from deepspeed.runtime.engine import DeepSpeedEngine
 from deepspeed.runtime.utils import clip_grad_norm_
@@ -18,7 +17,17 @@ T = TypeVar("T")
 
 
 def flatten_dict(d):
-    records = pd.json_normalize(d, sep="/").to_dict(orient="records")
+    def _flatten_nested_dict(d, parent_key="", sep="/"):
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(_flatten_nested_dict(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    records = _flatten_nested_dict(d, sep="/")
     return records[0] if records else {}
 
 
