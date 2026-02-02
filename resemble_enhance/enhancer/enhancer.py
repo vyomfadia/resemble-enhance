@@ -1,7 +1,5 @@
 import logging
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import torch
 from torch import Tensor, nn
 from torch.distributions import Beta
@@ -9,8 +7,6 @@ from torch.distributions import Beta
 from ..common import Normalizer
 from ..denoiser.inference import load_denoiser
 from ..melspec import MelSpectrogram
-from ..utils.distributed import global_leader_only
-from ..utils.train_loop import TrainLoop
 from .hparams import HParams
 from .lcfm import CFM, IRMAE, LCFM
 from .univnet import UnivNet
@@ -86,12 +82,19 @@ class Enhancer(nn.Module):
         logger.info(f"Loaded pretrained model from {path}")
 
     def summarize(self):
+        # lazy imports for training-only dependencies
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError("you are in training mode - make sure you installed dependencies as resemble-enhance[train]") from e
+
         npa_train = lambda m: sum(p.numel() for p in m.parameters() if p.requires_grad)
         npa = lambda m: sum(p.numel() for p in m.parameters())
         rows = []
         for name, module in self.named_children():
             rows.append(dict(name=name, trainable=npa_train(module), total=npa(module)))
         rows.append(dict(name="total", trainable=npa_train(self), total=npa(self)))
+
         df = pd.DataFrame(rows)
         return df.to_markdown(index=False)
 
@@ -106,9 +109,20 @@ class Enhancer(nn.Module):
             return self.mel_fn(x)[..., :-1]  # (b d t)
         return self.mel_fn(x)
 
-    @global_leader_only
     @torch.no_grad()
     def _visualize(self, original_mel, denoised_mel):
+        # lazy imports for training-only dependencies
+        try:
+            from ..utils.distributed import is_global_leader
+            from ..utils.train_loop import TrainLoop
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError("please install resemble-enhance[train] to use training visualization") from e
+
+        # only run on global leader
+        if not is_global_leader():
+            return
+
         loop = TrainLoop.get_running_loop()
         if loop is None or loop.global_step % 100 != 0:
             return

@@ -3,13 +3,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from omegaconf import OmegaConf
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 
 logger = logging.getLogger(__name__)
-
-console = Console()
 
 
 def _make_stft_cfg(hop_length, win_length=None):
@@ -19,17 +14,22 @@ def _make_stft_cfg(hop_length, win_length=None):
     return dict(n_fft=n_fft, hop_length=hop_length, win_length=win_length)
 
 
-def _build_rich_table(rows, columns, title=None):
-    table = Table(title=title, header_style=None)
-    for column in columns:
-        table.add_column(column.capitalize(), justify="left")
-    for row in rows:
-        table.add_row(*map(str, row))
-    return Panel(table, expand=False)
-
-
 def _rich_print_dict(d, title="Config", key="Key", value="Value"):
-    console.print(_build_rich_table(d.items(), [key, value], title))
+    # this is only used in training, so make sure you install `resemble-enhance[train]` for these
+    # dependencies to exist
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.table import Table
+    except ImportError as e:
+        raise ImportError("please install resemble-enhance[train] to use rich table") from e
+
+    table = Table(title=title, header_style=None)
+    for column in [key, value]:
+        table.add_column(column.capitalize(), justify="left")
+    for row in d.items():
+        table.add_row(*map(str, row))
+    Console().print(Panel(table, expand=False))
 
 
 @dataclass(frozen=True)
