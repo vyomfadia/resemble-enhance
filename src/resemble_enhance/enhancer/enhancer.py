@@ -10,6 +10,7 @@ from ..melspec import MelSpectrogram
 from .hparams import HParams
 from .lcfm import CFM, IRMAE, LCFM
 from .univnet import UnivNet
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,6 @@ class Enhancer(nn.Module):
         try:
             from ..utils.distributed import is_global_leader
             from ..utils.train_loop import TrainLoop
-            import matplotlib.pyplot as plt
         except ImportError as e:
             raise ImportError("please install resemble-enhance[train] to use training visualization") from e
 
