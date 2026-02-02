@@ -25,7 +25,7 @@ def save_mels(path, *, targ_mel, pred_mel, cond_mel):
     pred_mel = pred_mel[:, : targ_mel.shape[1]]
     targ_mel = targ_mel[:, : pred_mel.shape[1]]
     plt.imshow(np.abs(pred_mel - targ_mel), origin="lower", interpolation="none")
-    plt.title(f"Diff mel {pred_mel.shape}, mse={np.mean((pred_mel - targ_mel)**2):.4f}")
+    plt.title(f"Diff mel {pred_mel.shape}, mse={np.mean((pred_mel - targ_mel) ** 2):.4f}")
     i += 1
 
     if cond_mel is not None:
@@ -42,23 +42,19 @@ T = TypeVar("T")
 
 
 @overload
-def tree_map(fn: Callable, x: list[T]) -> list[T]:
-    ...
+def tree_map(fn: Callable, x: list[T]) -> list[T]: ...
 
 
 @overload
-def tree_map(fn: Callable, x: tuple[T]) -> tuple[T]:
-    ...
+def tree_map(fn: Callable, x: tuple[T]) -> tuple[T]: ...
 
 
 @overload
-def tree_map(fn: Callable, x: dict[str, T]) -> dict[str, T]:
-    ...
+def tree_map(fn: Callable, x: dict[str, T]) -> dict[str, T]: ...
 
 
 @overload
-def tree_map(fn: Callable, x: T) -> T:
-    ...
+def tree_map(fn: Callable, x: T) -> T: ...
 
 
 def tree_map(fn: Callable, x):

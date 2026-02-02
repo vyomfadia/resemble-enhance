@@ -57,14 +57,9 @@ class UNet(nn.Module):
         self.output_dim = output_dim
         self.input_proj = nn.Conv2d(input_dim, hidden_dim, 3, padding=1)
         self.encoder_blocks = nn.ModuleList(
-            [
-                UNetBlock(input_dim=hidden_dim * 2**i, output_dim=hidden_dim * 2 ** (i + 1), scale_factor=0.5)
-                for i in range(num_blocks)
-            ]
+            [UNetBlock(input_dim=hidden_dim * 2**i, output_dim=hidden_dim * 2 ** (i + 1), scale_factor=0.5) for i in range(num_blocks)]
         )
-        self.middle_blocks = nn.ModuleList(
-            [UNetBlock(input_dim=hidden_dim * 2**num_blocks) for _ in range(num_middle_blocks)]
-        )
+        self.middle_blocks = nn.ModuleList([UNetBlock(input_dim=hidden_dim * 2**num_blocks) for _ in range(num_middle_blocks)])
         self.decoder_blocks = nn.ModuleList(
             [
                 UNetBlock(input_dim=hidden_dim * 2 ** (i + 1), output_dim=hidden_dim * 2**i, scale_factor=2)

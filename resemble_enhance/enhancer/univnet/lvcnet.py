@@ -1,4 +1,4 @@
-""" refer from https://github.com/zceng/LVCNet """
+"""refer from https://github.com/zceng/LVCNet"""
 
 import torch
 import torch.nn as nn
@@ -231,12 +231,8 @@ class LVCBlock(torch.nn.Module):
             k = kernels[:, i, :, :, :, :]  # (B, 2 * c_g, c_g, kernel_size, cond_length)
             b = bias[:, i, :, :]  # (B, 2 * c_g, cond_length)
 
-            output = self.location_variable_convolution(
-                output, k, b, hop_size=self.cond_hop_length
-            )  # (B, 2 * c_g, stride * L'): LVC
-            x = x + torch.sigmoid(output[:, :in_channels, :]) * torch.tanh(
-                output[:, in_channels:, :]
-            )  # (B, c_g, stride * L'): GAU
+            output = self.location_variable_convolution(output, k, b, hop_size=self.cond_hop_length)  # (B, 2 * c_g, stride * L'): LVC
+            x = x + torch.sigmoid(output[:, :in_channels, :]) * torch.tanh(output[:, in_channels:, :])  # (B, c_g, stride * L'): GAU
 
         return x
 
@@ -255,9 +251,7 @@ class LVCBlock(torch.nn.Module):
         batch, _, in_length = x.shape
         batch, _, out_channels, kernel_size, kernel_length = kernel.shape
 
-        assert in_length == (
-            kernel_length * hop_size
-        ), f"length of (x, kernel) is not matched, {in_length} != {kernel_length} * {hop_size}"
+        assert in_length == (kernel_length * hop_size), f"length of (x, kernel) is not matched, {in_length} != {kernel_length} * {hop_size}"
 
         padding = dilation * int((kernel_size - 1) / 2)
         x = F.pad(x, (padding, padding), "constant", 0)  # (batch, in_channels, in_length + 2*padding)
@@ -265,9 +259,7 @@ class LVCBlock(torch.nn.Module):
 
         if hop_size < dilation:
             x = F.pad(x, (0, dilation), "constant", 0)
-        x = x.unfold(
-            3, dilation, dilation
-        )  # (batch, in_channels, kernel_length, (hop_size + 2*padding)/dilation, dilation)
+        x = x.unfold(3, dilation, dilation)  # (batch, in_channels, kernel_length, (hop_size + 2*padding)/dilation, dilation)
         x = x[:, :, :, :, :hop_size]
         x = x.transpose(3, 4)  # (batch, in_channels, kernel_length, dilation, (hop_size + 2*padding)/dilation)
         x = x.unfold(4, kernel_size, 1)  # (batch, in_channels, kernel_length, dilation, _, kernel_size)
