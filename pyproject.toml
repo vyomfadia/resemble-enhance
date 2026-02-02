@@ -30,5 +30,9 @@ train = [
     "tabulate>=0.8.10",
 ]
 
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
 [tool.ruff]
 line-length = 140
